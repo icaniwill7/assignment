@@ -12,10 +12,19 @@ from docx import Document
 from PyPDF2 import PdfReader
 from nltk import word_tokenize, pos_tag, download
 
-# ---------- NLTK 리소스 다운로드 ---------- #
-download("punkt", quiet=True)
-download("punkt_tab", quiet=True)          # 🔹 이 줄 추가
-download("averaged_perceptron_tagger", quiet=True)
+# ---------- NLTK 리소스 다운로드 (여러 버전 호환) ---------- #
+for res in [
+    "punkt",                     # 기본 토크나이저
+    "punkt_tab",                 # 일부 NLTK 버전에서 추가로 요구
+    "averaged_perceptron_tagger",
+    "averaged_perceptron_tagger_eng",  # 최신 NLTK에서 요구하는 태거 이름
+]:
+    try:
+        download(res, quiet=True)
+    except Exception:
+        # 없는 리소스 이름이어도 그냥 넘어가도록
+        pass
+
 
 # ---------- 상수 설정 ---------- #
 POS_CATEGORIES = {
