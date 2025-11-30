@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*-
 import os
-import csv
 from io import BytesIO
 
 import numpy as np
@@ -8,18 +8,21 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from docx import Document
 
+# 🔥 NLTK는 반드시 최상단에서 import
 import nltk
+from nltk import word_tokenize, pos_tag
 
-# ★ NLTK 최신 버그 대응: 두 버전 모두 다운로드
+# 🔥 NLTK 리소스 다운로드 (requirements에서 nltk==3.8.1이면 이 두 개면 충분)
 nltk.download("punkt", quiet=True)
-nltk.download("punkt_tab", quiet=True)
 nltk.download("averaged_perceptron_tagger", quiet=True)
-nltk.download("averaged_perceptron_tagger_eng", quiet=True)
 
-
-
-# ---------- 기본 설정 ---------- #
-POS_CATEGORIES = {"Verb": "VB", "Noun": "NN", "Adjective": "JJ", "Adverb": "RB"}
+# ---------- 기본 설정 (원본 Tk 코드와 동일) ---------- #
+POS_CATEGORIES = {
+    "Verb": "VB",
+    "Noun": "NN",
+    "Adjective": "JJ",
+    "Adverb": "RB",
+}
 
 ACADEMIC_WORDS = {
     "analyze", "approach", "area", "assess", "assume", "authority", "concept",
@@ -36,10 +39,10 @@ ACADEMIC_WORDS = {
 # ---------- PDF → DOCX + 텍스트 추출 ---------- #
 def pdf_to_docx_and_text(pdf_file) -> tuple[BytesIO, str]:
     """
-    Streamlit의 업로드 파일 객체를 받아서
-    1) PDF 텍스트를 추출하여 DOCX로 저장하고
+    Streamlit 업로드 객체 (pdf_file)를 받아서
+    1) 페이지별 텍스트를 추출해 DOCX로 변환하고
     2) 전체 텍스트를 하나의 문자열로 반환한다.
-    (원본 pdf_to_docx_simple과 가능한 한 동일한 로직)
+    (원래 pdf_to_docx_simple과 거의 동일한 로직)
     """
     reader = PdfReader(pdf_file)
     doc = Document()
@@ -52,9 +55,10 @@ def pdf_to_docx_and_text(pdf_file) -> tuple[BytesIO, str]:
         text = page.extract_text()
         if text:
             all_text_parts.append(text)
+            # 줄 단위로 paragraph 추가 (원본 코드와 동일한 구조)
             for line in text.splitlines():
                 doc.add_paragraph(line)
-        # 마지막 페이지가 아니면 page break
+        # 마지막 페이지가 아니면 page break 추가
         if i < num_pages - 1:
             doc.add_page_break()
 
@@ -66,13 +70,13 @@ def pdf_to_docx_and_text(pdf_file) -> tuple[BytesIO, str]:
     return buffer, full_text
 
 
-# ---------- 분석 함수 (원본 알고리즘 유지) ---------- #
-def extract_pos(text, prefix):
+# ---------- 분석 함수들 (원본 Tk 코드 알고리즘 그대로) ---------- #
+def extract_pos(text: str, prefix: str):
     tagged = pos_tag(word_tokenize(text))
     return [w.lower() for w, tag in tagged if tag.startswith(prefix)]
 
 
-def calculate_mattr(words, win=50):
+def calculate_mattr(words, win: int = 50) -> float:
     if not words:
         return 0.0
     if len(words) < win:
@@ -84,7 +88,7 @@ def calculate_mattr(words, win=50):
     )
 
 
-def calculate_category_mattr(cat, allw, win=11):
+def calculate_category_mattr(cat, allw, win: int = 11) -> float:
     if len(allw) < win:
         return len(set(cat)) / len(cat) if cat else 0.0
     vals = []
@@ -97,20 +101,33 @@ def calculate_category_mattr(cat, allw, win=11):
 
 
 def calc_lexical_soph(allw):
-    """AWL ratio + bigram/trigram type-token ratio"""
+    """
+    AWL 비율 + bigram/trigram type-token ratio
+    (원본 코드 calc_lexical_soph와 동일한 아이디어)
+    """
     if not allw:
         return 0.0, 0.0, 0.0
+
     total = len(allw)
     awl = sum(1 for w in allw if w in ACADEMIC_WORDS) / total
+
     bigr = ["_".join(allw[i:i + 2]) for i in range(len(allw) - 1)]
     trigr = ["_".join(allw[i:i + 3]) for i in range(len(allw) - 2)]
+
     big = len(set(bigr)) / len(bigr) if bigr else 0.0
     tri = len(set(trigr)) / len(trigr) if trigr else 0.0
+
     return round(awl, 4), round(big, 4), round(tri, 4)
 
 
 def analyze_text(filename: str, text: str, win_all: int, win_pos: int) -> dict:
-    """한 파일 텍스트에 대해 MATTR + LexSoph 계산"""
+    """
+    한 파일(텍스트)에 대해:
+    - All_words_MATTR
+    - POS별 MATTR
+    - Lexical Sophistication
+    계산해서 dict로 반환
+    """
     tokens = word_tokenize(text)
     allw = [w.lower() for w in tokens if w.isalpha()]
 
@@ -146,11 +163,11 @@ def main():
         """
         1. **PDF 파일들을 업로드**하면, 각 파일을 Word(DOCX)로 변환합니다.  
         2. 동시에 PDF에서 추출한 텍스트로 **MATTR + Lexical sophistication** 분석을 수행합니다.  
-        3. 원본 Tkinter/ttkbootstrap 버전과 **동일한 수식과 window size 로직**을 사용합니다.
+        3. 원래 Tkinter + ttkbootstrap 버전과 **동일한 계산 로직(window size, POS, AWL, n-gram 비율)**을 사용합니다.
         """
     )
 
-    # 사이드바: window size 설정
+    # 사이드바: window size 설정 (원래 기본값 50 / 11 그대로)
     st.sidebar.header("Window size 설정")
     win_all = st.sidebar.number_input(
         "All words window size", min_value=5, max_value=500, value=50, step=1
@@ -160,7 +177,7 @@ def main():
     )
 
     st.sidebar.markdown("---")
-    st.sidebar.info("여러 개의 PDF를 한 번에 올릴 수 있습니다.")
+    st.sidebar.info("여러 개의 PDF를 한 번에 업로드할 수 있습니다.")
 
     uploaded_files = st.file_uploader(
         "분석할 PDF 파일을 선택하세요 (복수 선택 가능)",
@@ -179,8 +196,10 @@ def main():
         progress = st.progress(0)
         status_text = st.empty()
 
+        total = len(uploaded_files)
+
         for idx, up in enumerate(uploaded_files, start=1):
-            status_text.text(f"{idx}/{len(uploaded_files)} 처리 중: {up.name}")
+            status_text.text(f"{idx}/{total} 처리 중: {up.name}")
             try:
                 # PDF → DOCX + 텍스트 추출
                 docx_bytes, text = pdf_to_docx_and_text(up)
@@ -195,9 +214,9 @@ def main():
             except Exception as e:
                 st.error(f"❌ {up.name} 처리 중 오류: {e}")
 
-            progress.progress(idx / len(uploaded_files))
+            progress.progress(idx / total)
 
-        status_text.text("완료!")
+        status_text.text("모든 파일 처리 완료!")
 
         if not results:
             st.error("유효한 결과가 없습니다.")
@@ -205,7 +224,7 @@ def main():
 
         # 결과 테이블 표시
         df_results = pd.DataFrame(results)
-        st.subheader("📊 분석 결과 (MATTR + Lexical sophistication)")
+        st.subheader("📊 분석 결과 (MATTR + Lexical Sophistication)")
         st.dataframe(df_results, use_container_width=True)
 
         # CSV 다운로드
@@ -213,7 +232,7 @@ def main():
         df_results.to_csv(csv_buf, index=False, encoding="utf-8-sig")
         csv_buf.seek(0)
         st.download_button(
-            label="결과 CSV 다운로드",
+            label="결과 CSV 다운로드 (results.csv)",
             data=csv_buf,
             file_name="results.csv",
             mime="text/csv",
