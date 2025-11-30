@@ -2,6 +2,8 @@
 import os
 import csv
 from io import BytesIO
+nltk.download("punkt_tab", quiet=True)
+
 
 import numpy as np
 import pandas as pd
