@@ -10,9 +10,11 @@ import pandas as pd
 from nltk import word_tokenize, pos_tag, download
 from docx import Document
 from PyPDF2 import PdfReader
+from nltk import word_tokenize, pos_tag, download
 
 # ---------- NLTK 리소스 다운로드 ---------- #
 download("punkt", quiet=True)
+download("punkt_tab", quiet=True)          # 🔹 이 줄 추가
 download("averaged_perceptron_tagger", quiet=True)
 
 # ---------- 상수 설정 ---------- #
