@@ -9,12 +9,13 @@ from PyPDF2 import PdfReader
 from docx import Document
 
 import nltk
-from nltk import word_tokenize, pos_tag
 
-# NLTK 리소스 다운로드
+# ★ NLTK 최신 버그 대응: 두 버전 모두 다운로드
 nltk.download("punkt", quiet=True)
-nltk.download("punkt_tab", quiet=True)   # ← 🔥 새로 추가된 부분
+nltk.download("punkt_tab", quiet=True)
 nltk.download("averaged_perceptron_tagger", quiet=True)
+nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+
 
 
 # ---------- 기본 설정 ---------- #
