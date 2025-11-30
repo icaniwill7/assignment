@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
 import os
 import csv
 from io import BytesIO
-nltk.download("punkt_tab", quiet=True)
-
 
 import numpy as np
 import pandas as pd
@@ -14,9 +11,11 @@ from docx import Document
 import nltk
 from nltk import word_tokenize, pos_tag
 
-# NLTK 리소스 다운로드 (이미 있으면 건너뜀)
+# NLTK 리소스 다운로드
 nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)   # ← 🔥 새로 추가된 부분
 nltk.download("averaged_perceptron_tagger", quiet=True)
+
 
 # ---------- 기본 설정 ---------- #
 POS_CATEGORIES = {"Verb": "VB", "Noun": "NN", "Adjective": "JJ", "Adverb": "RB"}
